@@ -16,6 +16,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _username = '';
   String _email = '';
   String _phoneNumber = '';
+  String _oldPassword = '';
+  String _newPassword = '';
+  String _confirmNewPassword = '';
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // دالة لتحديث بيانات المستخدم
   Future<void> _updateUserData() async {
     if (_formKey.currentState!.validate()) {
       final userRef = FirebaseFirestore.instance.collection('users').doc(_userId);
@@ -53,11 +57,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _showChangePasswordDialog() async {
-    String currentPassword = '';
-    String newPassword = '';
-    String confirmNewPassword = '';
+  // دالة لتحديث كلمة المرور
+  Future<void> _updatePassword() async {
+    if (_newPassword != _confirmNewPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
+      return;
+    }
 
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final authCredential = EmailAuthProvider.credential(
+        email: _email,
+        password: _oldPassword,
+      );
+
+      // إعادة التحقق من كلمة المرور القديمة وتحديثها بالجديدة
+      await user?.reauthenticateWithCredential(authCredential);
+      await user?.updatePassword(_newPassword);
+
+      // تحديث كلمة المرور في كولكشن اليوزر في Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userId)
+          .update({'password': _newPassword})
+          .then((_) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
+          }).catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل في تحديث كلمة المرور: $error')));
+          });
+
+      Navigator.pop(context); // العودة إلى الشاشة السابقة بعد التحديث
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
+    }
+  }
+
+  // دالة لعرض نافذة تغيير كلمة المرور
+  Future<void> _showChangePasswordDialog() async {
     showDialog(
       context: context,
       builder: (context) {
@@ -70,21 +106,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 obscureText: true,
                 decoration: InputDecoration(labelText: 'كلمة المرور الحالية'),
                 onChanged: (value) {
-                  currentPassword = value;
+                  _oldPassword = value;
                 },
               ),
               TextFormField(
                 obscureText: true,
                 decoration: InputDecoration(labelText: 'كلمة المرور الجديدة'),
                 onChanged: (value) {
-                  newPassword = value;
+                  _newPassword = value;
                 },
               ),
               TextFormField(
                 obscureText: true,
                 decoration: InputDecoration(labelText: 'تأكيد كلمة المرور الجديدة'),
                 onChanged: (value) {
-                  confirmNewPassword = value;
+                  _confirmNewPassword = value;
                 },
               ),
             ],
@@ -96,26 +132,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () async {
-                if (newPassword == confirmNewPassword) {
-                  try {
-                    final user = FirebaseAuth.instance.currentUser;
-                    final authCredential = EmailAuthProvider.credential(
-                      email: _email,
-                      password: currentPassword,
-                    );
-
-                    // إعادة التحقق من كلمة المرور القديمة وتحديثها بالجديدة
-                    await user?.reauthenticateWithCredential(authCredential);
-                    await user?.updatePassword(newPassword);
-
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
-                    Navigator.pop(context);
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
-                }
+                // تنفيذ تحديث كلمة المرور من خلال الدالة المعدلة
+                await _updatePassword();
               },
               child: Text('حفظ'),
             ),
