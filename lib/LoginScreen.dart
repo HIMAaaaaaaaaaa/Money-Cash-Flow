@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -30,45 +32,63 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-void _login() async {
-  if (_formKey.currentState!.validate()) {
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } on FirebaseAuthException catch (e) {
-      // عرض كود الخطأ في وحدة التحكم للتحقق منه
-      print('Error code: ${e.code}');
-      
-      String errorMessage;
-      if (e.code == 'user-not-found') {
-        errorMessage = 'This email is not registered. Please check your email.';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = 'The email address is not formatted correctly.';
-      } else {
-        errorMessage = 'Login failed: ${e.message}';
-      }
+  Future<void> _createUserDocument(User user) async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final docSnapshot = await userRef.get();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (!docSnapshot.exists) {
+      // حفظ كلمة المرور مباشرة بدون تشفير
+      await userRef.set({
+        'user_id': user.uid,
+        'email': user.email,
+        'password': _passwordController.text.trim(),
+        'username': '', // يمكن ملؤه لاحقًا من صفحة الإعدادات
+        'phone_number': '', // يمكن ملؤه لاحقًا من صفحة الإعدادات
+      });
     }
   }
-}
+
+  void _login() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+
+        User? user = userCredential.user;
+        if (user != null) {
+          await _createUserDocument(user); // إنشاء بيانات المستخدم إذا لم تكن موجودة
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
+      } on FirebaseAuthException catch (e) {
+        String errorMessage;
+        if (e.code == 'user-not-found') {
+          errorMessage = 'This email is not registered. Please check your email.';
+        } else if (e.code == 'wrong-password') {
+          errorMessage = 'Incorrect password. Please try again.';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'The email address is not formatted correctly.';
+        } else {
+          errorMessage = 'Login failed: ${e.message}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +154,8 @@ void _login() async {
     );
   }
 }
+
+
 
 
 
