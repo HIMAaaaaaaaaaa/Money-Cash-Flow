@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
-
-
 class SettingsScreen extends StatefulWidget {
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -19,30 +16,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _oldPassword = '';
   String _newPassword = '';
   String _confirmNewPassword = '';
-
+  
+  Future<void>? _initializeUserFuture; // تخزين Future هنا
+  
   @override
   void initState() {
     super.initState();
-    _initializeUserData();
+    _initializeUserFuture = _initializeUserData(); // استدعاء الدالة مرة واحدة فقط
   }
 
   Future<void> _initializeUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      _userId = user.uid;
-      _email = user.email ?? '';
-
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
-      if (userDoc.exists) {
-        setState(() {
-          _username = userDoc.data()?['username'] ?? '';
-          _phoneNumber = userDoc.data()?['phone_number'] ?? '';
-        });
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userId = user.uid;
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+        
+        if (userDoc.exists) {
+          setState(() {
+            _username = userDoc.data()?['username'] ?? '';
+            _email = user.email ?? '';
+            _phoneNumber = userDoc.data()?['phone_number'] ?? '';
+          });
+        } else {
+          print('User data not found');
+        }
+      } else {
+        print('No user logged in');
       }
+    } catch (e) {
+      print('Error loading user data: $e');
     }
   }
 
-  // دالة لتحديث بيانات المستخدم
   Future<void> _updateUserData() async {
     if (_formKey.currentState!.validate()) {
       final userRef = FirebaseFirestore.instance.collection('users').doc(_userId);
@@ -53,14 +59,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'phone_number': _phoneNumber,
       }, SetOptions(merge: true));
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ التغييرات بنجاح')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('تم حفظ التغييرات بنجاح')));
     }
   }
 
-  // دالة لتحديث كلمة المرور
   Future<void> _updatePassword() async {
     if (_newPassword != _confirmNewPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
       return;
     }
 
@@ -71,28 +78,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         password: _oldPassword,
       );
 
-      // إعادة التحقق من كلمة المرور القديمة وتحديثها بالجديدة
       await user?.reauthenticateWithCredential(authCredential);
       await user?.updatePassword(_newPassword);
 
-      // تحديث كلمة المرور في كولكشن اليوزر في Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_userId)
-          .update({'password': _newPassword})
-          .then((_) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
-          }).catchError((error) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل في تحديث كلمة المرور: $error')));
-          });
+          .update({'password': _newPassword}).then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('فشل في تحديث كلمة المرور: $error')));
+      });
 
-      Navigator.pop(context); // العودة إلى الشاشة السابقة بعد التحديث
+      Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
     }
   }
 
-  // دالة لعرض نافذة تغيير كلمة المرور
   Future<void> _showChangePasswordDialog() async {
     showDialog(
       context: context,
@@ -132,7 +138,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () async {
-                // تنفيذ تحديث كلمة المرور من خلال الدالة المعدلة
                 await _updatePassword();
               },
               child: Text('حفظ'),
@@ -149,64 +154,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: Text('الإعدادات'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                initialValue: _username,
-                decoration: InputDecoration(labelText: 'اسم المستخدم'),
-                onChanged: (value) {
-                  setState(() {
-                    _username = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'الرجاء إدخال اسم المستخدم';
-                  }
-                  return null;
-                },
+      body: FutureBuilder<void>(
+        future: _initializeUserFuture, // استخدم Future المخزن هنا
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('حدث خطأ أثناء تحميل البيانات'));
+          } else {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      initialValue: _username,
+                      decoration: InputDecoration(labelText: 'اسم المستخدم'),
+                      onChanged: (value) {
+                        setState(() {
+                          _username = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'الرجاء إدخال اسم المستخدم';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      initialValue: _email,
+                      decoration: InputDecoration(labelText: 'البريد الإلكتروني'),
+                      readOnly: true,
+                    ),
+                    TextFormField(
+                      initialValue: _phoneNumber,
+                      decoration: InputDecoration(labelText: 'رقم الهاتف'),
+                      onChanged: (value) {
+                        setState(() {
+                          _phoneNumber = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'الرجاء إدخال رقم الهاتف';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _updateUserData,
+                      child: Text('حفظ التغييرات'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _showChangePasswordDialog,
+                      child: Text('تعيين إعادة كلمة سر جديدة'),
+                    ),
+                  ],
+                ),
               ),
-              TextFormField(
-                initialValue: _email,
-                decoration: InputDecoration(labelText: 'البريد الإلكتروني'),
-                readOnly: true, // جعل البريد الإلكتروني للعرض فقط
-              ),
-              TextFormField(
-                initialValue: _phoneNumber,
-                decoration: InputDecoration(labelText: 'رقم الهاتف'),
-                onChanged: (value) {
-                  setState(() {
-                    _phoneNumber = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'الرجاء إدخال رقم الهاتف';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _updateUserData,
-                child: Text('حفظ التغييرات'),
-              ),
-              ElevatedButton(
-                onPressed: _showChangePasswordDialog,
-                child: Text('تعيين إعادة كلمة سر جديدة'),
-              ),
-            ],
-          ),
-        ),
+            );
+          }
+        },
       ),
     );
   }
 }
-
-
-
 
