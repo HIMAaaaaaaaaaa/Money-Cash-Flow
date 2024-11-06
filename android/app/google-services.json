@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "951029199900",
+    "project_id": "money-cash-flow",
+    "storage_bucket": "money-cash-flow.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:951029199900:android:aa083ce79d302948e65bd9",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_money_cash_flow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASzmduYLuXRXQtFhzRCXWQ_tY5b6__bwI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
