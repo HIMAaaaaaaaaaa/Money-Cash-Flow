@@ -92,11 +92,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class DashboardContent extends StatelessWidget {
-  final double dailyExpenses = 150.0;
-  final double weeklyExpenses = 1050.0;
-  final double monthlyExpenses = 4200.0;
-  final double totalIncome = 5000.0;
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -115,10 +110,31 @@ class DashboardContent extends StatelessWidget {
 
         // حساب مجموع المصروفات لكل فئة
         Map<String, double> categoryTotals = {};
+        double dailyExpense = 0.0;
+        double weeklyExpense = 0.0;
+        double monthlyExpense = 0.0;
+
         snapshot.data!.docs.forEach((doc) {
           String category = doc['category'];
           double amount = doc['amount'];
+          DateTime date = (doc['date'] as Timestamp).toDate();
+          
           categoryTotals[category] = (categoryTotals[category] ?? 0) + amount;
+
+          // حساب المصروفات اليومية
+          if (date.isAfter(DateTime.now().subtract(Duration(days: 1)))) {
+            dailyExpense += amount;
+          }
+
+          // حساب المصروفات الأسبوعية
+          if (date.isAfter(DateTime.now().subtract(Duration(days: 7)))) {
+            weeklyExpense += amount;
+          }
+
+          // حساب المصروفات الشهرية
+          if (date.isAfter(DateTime.now().subtract(Duration(days: 30)))) {
+            monthlyExpense += amount;
+          }
         });
 
         double totalExpense = categoryTotals.values.fold(0, (sum, item) => sum + item);
@@ -146,13 +162,12 @@ class DashboardContent extends StatelessWidget {
                   children: [
                     _buildIncomeOverview(totalExpense, monthlyIncome, dailyAllowance),
                     SizedBox(height: 20),
-                    _buildExpenseSummary(),
+                    _buildExpenseSummary(dailyExpense, weeklyExpense, monthlyExpense),
                     SizedBox(height: 20),
                     _buildExpenseChart(categoryTotals, totalExpense), // إضافة فلو شارت
                     SizedBox(height: 20),
                     _buildExpenseList(snapshot),
                     SizedBox(height: 20),
-                    
                   ],
                 ),
               ),
@@ -182,7 +197,8 @@ class DashboardContent extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseSummary() {
+
+  Widget _buildExpenseSummary(double dailyExpense, double weeklyExpense, double monthlyExpense) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -195,9 +211,9 @@ class DashboardContent extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSummaryCard('Daily', dailyExpenses),
-                _buildSummaryCard('Weekly', weeklyExpenses),
-                _buildSummaryCard('Monthly', monthlyExpenses),
+                _buildSummaryCard('Daily', dailyExpense),
+                _buildSummaryCard('Weekly', weeklyExpense),
+                _buildSummaryCard('Monthly', monthlyExpense),
               ],
             ),
           ],
@@ -256,12 +272,19 @@ Color _getColorForCategory(String category) {
   }
 }
 
-  Widget _buildSummaryCard(String title, double value) {
-    return Column(
-      children: [
-        Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Text('\$${value.toStringAsFixed(2)}', style: TextStyle(fontSize: 14)),
-      ],
+  Widget _buildSummaryCard(String title, double amount) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('\$${amount.toStringAsFixed(2)}', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+      ),
     );
   }
 
