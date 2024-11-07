@@ -17,6 +17,7 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Expense Details'),
+        automaticallyImplyLeading: false, // This removes the back button
       ),
       body: Column(
         children: [
@@ -163,6 +164,7 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
     print('Expense deleted: $id');
   }
 }
+
 
 
 

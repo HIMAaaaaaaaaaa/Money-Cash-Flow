@@ -25,7 +25,10 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
   }
 
   Future<void> _fetchCurrentIncomeAndAllowance() async {
-    final doc = await FirebaseFirestore.instance.collection('finance').doc('monthly_income').get();
+    final doc = await FirebaseFirestore.instance
+        .collection('finance')
+        .doc('monthly_income')
+        .get();
     if (doc.exists) {
       setState(() {
         _monthlyIncome = doc.data()?['monthly_income']?.toDouble();
@@ -38,7 +41,11 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
   }
 
   Future<void> _fetchIncomeData() async {
-    final querySnapshot = await FirebaseFirestore.instance.collection('finance').doc('monthly_income').collection('daily_income').get();
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('finance')
+        .doc('monthly_income')
+        .collection('daily_income')
+        .get();
     setState(() {
       _incomeData = querySnapshot.docs.map((doc) {
         final date = doc.data()['date'].toDate();
@@ -53,7 +60,10 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     double? allowance = double.tryParse(_allowanceController.text);
 
     if (income != null && allowance != null) {
-      await FirebaseFirestore.instance.collection('finance').doc('monthly_income').set({
+      await FirebaseFirestore.instance
+          .collection('finance')
+          .doc('monthly_income')
+          .set({
         'monthly_income': income,
         'daily_allowance': allowance,
         'income_date': _incomeDate.toIso8601String(),
@@ -61,14 +71,20 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
       });
       await _saveDailyIncome(); // Save daily income for the chart
       _checkDailyExpense(allowance); // Check daily expenses
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Income and allowance saved successfully!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Income and allowance saved successfully!')));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter valid values!')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Please enter valid values!')));
     }
   }
 
   Future<void> _saveDailyIncome() async {
-    await FirebaseFirestore.instance.collection('finance').doc('monthly_income').collection('daily_income').add({
+    await FirebaseFirestore.instance
+        .collection('finance')
+        .doc('monthly_income')
+        .collection('daily_income')
+        .add({
       'date': _incomeDate,
       'amount': _monthlyIncome,
     });
@@ -80,7 +96,8 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     double dailyExpense = 100; // This should come from your expenses data
 
     if (dailyExpense > allowance) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Warning: Daily expenses exceed your allowance!')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Warning: Daily expenses exceed your allowance!')));
     }
   }
 
@@ -89,10 +106,15 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Monthly Income'),
+        automaticallyImplyLeading:
+            false, // Disable the back arrow or drawer icon
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        // Make the body scrollable
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start, // Align children to the left
           children: [
             TextField(
               controller: _incomeController,
@@ -163,7 +185,11 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
                   minX: 1,
                   maxX: 31,
                   minY: 0,
-                  maxY: _incomeData.isNotEmpty ? _incomeData.map((e) => e.y).reduce((a, b) => a > b ? a : b) : 200,
+                  maxY: _incomeData.isNotEmpty
+                      ? _incomeData
+                          .map((e) => e.y)
+                          .reduce((a, b) => a > b ? a : b)
+                      : 200,
                   lineBarsData: [
                     LineChartBarData(
                       spots: _incomeData,

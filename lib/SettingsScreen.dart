@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class SettingsScreen extends StatefulWidget {
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -33,7 +32,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _userId = user.uid;
       _email = user.email ?? '';
 
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userId)
+          .get();
       if (userDoc.exists) {
         setState(() {
           _username = userDoc.data()?['username'] ?? '';
@@ -47,7 +49,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateUserData() async {
     if (_formKey.currentState!.validate()) {
-      final userRef = FirebaseFirestore.instance.collection('users').doc(_userId);
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(_userId);
 
       await userRef.set({
         'username': _username,
@@ -55,13 +58,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'phone_number': _phoneNumber,
       }, SetOptions(merge: true));
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ التغييرات بنجاح')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('تم حفظ التغييرات بنجاح')));
     }
   }
 
   Future<void> _updatePassword() async {
     if (_newPassword != _confirmNewPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
       return;
     }
 
@@ -78,16 +83,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_userId)
-          .update({'password': _newPassword})
-          .then((_) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
-          }).catchError((error) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل في تحديث كلمة المرور: $error')));
-          });
+          .update({'password': _newPassword}).then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('فشل في تحديث كلمة المرور: $error')));
+      });
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
     }
   }
 
@@ -116,7 +123,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               TextFormField(
                 obscureText: true,
-                decoration: InputDecoration(labelText: 'تأكيد كلمة المرور الجديدة'),
+                decoration:
+                    InputDecoration(labelText: 'تأكيد كلمة المرور الجديدة'),
                 onChanged: (value) {
                   _confirmNewPassword = value;
                 },
@@ -152,6 +160,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('الإعدادات'),
+        automaticallyImplyLeading:
+            false, // Disable the back arrow or drawer icon
+        actions: [
+          IconButton(
+            icon: Icon(Icons.exit_to_app), // Icon for logout
+            onPressed: () {
+              _logout(context); // Call the logout function
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -205,6 +223,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+  void _logout(BuildContext context) {
+    // يمكنك هنا إضافة كود لتسجيل الخروج، مثل مسح البيانات أو التوجيه لشاشة تسجيل الدخول.
+    // مثال:
+    Navigator.pushReplacementNamed(context, '/login');
+  }
 }
-
-

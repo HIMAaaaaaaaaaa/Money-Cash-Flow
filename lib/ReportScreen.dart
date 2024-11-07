@@ -77,6 +77,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('التقرير المالي'),
+          automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -97,12 +98,6 @@ class _ReportScreenState extends State<ReportScreen> {
                 child: Text('- $tip', style: TextStyle(fontSize: 16)),
               ),
             Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                // هنا يمكنك إضافة كود لتصدير التقرير أو إرساله عبر البريد الإلكتروني
-              },
-              child: Text('تصدير التقرير'),
-            ),
           ],
         ),
       ),

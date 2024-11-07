@@ -17,6 +17,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Add Expense'),
+        automaticallyImplyLeading: false, // This removes the back button
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -91,4 +92,5 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 }
+
 

@@ -36,12 +36,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Colors.yellow,
   ];
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _currentIndex == 0
           ? AppBar(
               title: Text('Dashboard'),
+                        automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
             )
           : null, // لا تظهر العنوان في الصفحات الأخرى
       body: _pages[_currentIndex],

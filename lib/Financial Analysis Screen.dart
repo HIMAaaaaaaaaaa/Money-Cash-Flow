@@ -62,6 +62,7 @@ class _FinancialAnalysisScreenState extends State<FinancialAnalysisScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Financial Analysis'),
+          automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
       ),
       body: SingleChildScrollView(
         // Make the content scrollable
