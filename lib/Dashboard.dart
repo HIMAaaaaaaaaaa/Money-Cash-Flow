@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: _currentIndex == 0
           ? AppBar(
               title: Text('Dashboard'),
-                        automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
+              automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
             )
           : null, // لا تظهر العنوان في الصفحات الأخرى
       body: _pages[_currentIndex],
@@ -152,7 +152,6 @@ class DashboardContent extends StatelessWidget {
 
             final incomeData = incomeSnapshot.data!.data() as Map<String, dynamic>;
             double monthlyIncome = incomeData['monthly_income']?.toDouble() ?? 0;
-            double dailyAllowance = incomeData['daily_allowance']?.toDouble() ?? 0;
 
             return SingleChildScrollView(
               child: Padding(
@@ -160,7 +159,7 @@ class DashboardContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildIncomeOverview(totalExpense, monthlyIncome, dailyAllowance),
+                    _buildIncomeOverview(totalExpense, monthlyIncome),
                     SizedBox(height: 20),
                     _buildExpenseSummary(dailyExpense, weeklyExpense, monthlyExpense),
                     SizedBox(height: 20),
@@ -178,7 +177,7 @@ class DashboardContent extends StatelessWidget {
     );
   }
 
-  Widget _buildIncomeOverview(double totalExpense, double monthlyIncome, double dailyAllowance) {
+  Widget _buildIncomeOverview(double totalExpense, double monthlyIncome) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -189,7 +188,6 @@ class DashboardContent extends StatelessWidget {
             Text('Income Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
             Text('Total Income: \$${monthlyIncome.toStringAsFixed(2)}'),
-            Text('Daily Allowance: \$${dailyAllowance.toStringAsFixed(2)}'),
             Text('Total Expenses: \$${totalExpense.toStringAsFixed(2)}'),
           ],
         ),
@@ -310,6 +308,7 @@ Color _getColorForCategory(String category) {
     );
   }
 }
+
 
 
 
