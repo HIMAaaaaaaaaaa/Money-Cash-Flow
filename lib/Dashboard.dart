@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_application_money_cash_flow/AddExpenseScreen.dart';
 import 'package:flutter_application_money_cash_flow/Expense%20Details%20Screen.dart';
-import 'package:flutter_application_money_cash_flow/Financial%20Analysis%20Screen.dart';
+import 'package:flutter_application_money_cash_flow/IncomeDetailsScreen.dart';
 import 'package:flutter_application_money_cash_flow/Monthly%20Income%20Screen.dart';
 import 'package:flutter_application_money_cash_flow/ReportScreen.dart';
 import 'package:flutter_application_money_cash_flow/SettingsScreen.dart';
@@ -21,7 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     AddExpenseScreen(),
     ExpenseDetailsScreen(),
     MonthlyIncomeScreen(),
-    FinancialAnalysisScreen(),
+    IncomeDetailsScreen(),
     SettingsScreen(),
     ReportScreen(),
   ];

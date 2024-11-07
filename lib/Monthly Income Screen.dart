@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 
 class MonthlyIncomeScreen extends StatefulWidget {
   @override
@@ -8,64 +7,63 @@ class MonthlyIncomeScreen extends StatefulWidget {
 }
 
 class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
-  double? _monthlyIncome;
-  double? _dailyAllowance;
-  DateTime _incomeDate = DateTime.now();
+  double _monthlyIncome = 0.0;
   String _notes = "";
 
   final _incomeController = TextEditingController();
-  final _allowanceController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchCurrentIncomeAndAllowance();
+    _fetchCurrentMonthlyIncome();
   }
 
-  Future<void> _fetchCurrentIncomeAndAllowance() async {
+  Future<void> _fetchCurrentMonthlyIncome() async {
     final doc = await FirebaseFirestore.instance
         .collection('finance')
         .doc('monthly_income')
         .get();
     if (doc.exists) {
       setState(() {
-        _monthlyIncome = doc.data()?['monthly_income']?.toDouble();
-        _dailyAllowance = doc.data()?['daily_allowance']?.toDouble();
-        _incomeController.text = _monthlyIncome?.toString() ?? '';
-        _allowanceController.text = _dailyAllowance?.toString() ?? '';
+        _monthlyIncome = doc.data()?['monthly_income']?.toDouble() ?? 0.0;
       });
     }
   }
 
-  Future<void> _saveIncomeAndAllowance() async {
-    double? income = double.tryParse(_incomeController.text);
-    double? allowance = double.tryParse(_allowanceController.text);
+  Future<void> _addNewIncome() async {
+    double? newIncome = double.tryParse(_incomeController.text);
+    if (newIncome != null && newIncome > 0) {
+      // Update total monthly income
+      setState(() {
+        _monthlyIncome += newIncome;
+      });
 
-    if (income != null && allowance != null) {
+      // Save the updated income in the database
       await FirebaseFirestore.instance
           .collection('finance')
           .doc('monthly_income')
-          .set({
-        'monthly_income': income,
-        'daily_allowance': allowance,
-        'income_date': _incomeDate.toIso8601String(),
+          .update({
+        'monthly_income': _monthlyIncome,
+      });
+
+      // Add the new income entry to daily income collection
+      await FirebaseFirestore.instance
+          .collection('finance')
+          .doc('monthly_income')
+          .collection('daily_income')
+          .add({
+        'date': DateTime.now(),
+        'amount': newIncome,
         'notes': _notes,
       });
-      _checkDailyExpense(allowance);
+
+      // Clear the input field and show success message
+      _incomeController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Income and allowance saved successfully!')));
+          SnackBar(content: Text('Income added successfully!')));
     } else {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Please enter valid values!')));
-    }
-  }
-
-  void _checkDailyExpense(double allowance) {
-    double dailyExpense = 100; // This should come from your expenses data
-
-    if (dailyExpense > allowance) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Warning: Daily expenses exceed your allowance!')));
+          .showSnackBar(SnackBar(content: Text('Please enter a valid amount!')));
     }
   }
 
@@ -73,8 +71,9 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Monthly Income'),
-        automaticallyImplyLeading: false,
+        title: Text('Add Monthly Income'),
+                automaticallyImplyLeading: false, // This removes the back button
+
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -84,17 +83,7 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
             TextField(
               controller: _incomeController,
               decoration: InputDecoration(
-                labelText: 'Monthly Income',
-                border: OutlineInputBorder(),
-                prefixText: '\$',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _allowanceController,
-              decoration: InputDecoration(
-                labelText: 'Daily Allowance',
+                labelText: 'Income Amount',
                 border: OutlineInputBorder(),
                 prefixText: '\$',
               ),
@@ -110,33 +99,15 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
                 _notes = value;
               },
             ),
-            SizedBox(height: 16),
-            Text("Select Income Date:"),
-            Row(
-              children: [
-                Text(DateFormat('yyyy-MM-dd').format(_incomeDate)),
-                IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: _incomeDate,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null && pickedDate != _incomeDate) {
-                      setState(() {
-                        _incomeDate = pickedDate;
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _saveIncomeAndAllowance,
-              child: Text('Save'),
+              onPressed: _addNewIncome,
+              child: Text('Add Income'),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Total Monthly Income: \$$_monthlyIncome',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -144,3 +115,4 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     );
   }
 }
+

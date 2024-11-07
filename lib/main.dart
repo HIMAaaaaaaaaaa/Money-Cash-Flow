@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application_money_cash_flow/AddExpenseScreen.dart';
 import 'package:flutter_application_money_cash_flow/Dashboard.dart';
 import 'package:flutter_application_money_cash_flow/Expense%20Details%20Screen.dart';
-import 'package:flutter_application_money_cash_flow/Financial%20Analysis%20Screen.dart';
+import 'package:flutter_application_money_cash_flow/IncomeDetailsScreen.dart';
 import 'package:flutter_application_money_cash_flow/HomeScreen.dart';
 import 'package:flutter_application_money_cash_flow/Monthly%20Income%20Screen.dart';
 import 'package:flutter_application_money_cash_flow/ReportScreen.dart';
@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
         '/expense_entry': (context) => AddExpenseScreen(),
         '/expense_details': (context) => ExpenseDetailsScreen(),
         '/monthly_income': (context) => MonthlyIncomeScreen(),
-        '/financial_analysis': (context) => FinancialAnalysisScreen(),
+        '/IncomeDetailsScreen': (context) => IncomeDetailsScreen(),
         '/settings': (context) => SettingsScreen(),
         '/report': (context) => ReportScreen(),
       },
