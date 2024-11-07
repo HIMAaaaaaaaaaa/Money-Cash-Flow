@@ -27,12 +27,6 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
           Expanded(child: _buildExpenseList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add-expense');
-        },
-        child: Icon(Icons.add),
-      ),
     );
   }
 
