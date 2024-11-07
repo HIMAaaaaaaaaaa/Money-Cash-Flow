@@ -8,20 +8,27 @@ class MonthlyIncomeScreen extends StatefulWidget {
 }
 
 class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
+  // متغير لتخزين الدخل الشهري الحالي
   double _monthlyIncome = 0.0;
+  
+  // متغير لتخزين الملاحظات التي يضيفها المستخدم
   String _notes = "";
+
+  // متغير للتحكم في TextField الخاص بإدخال الدخل
   final _incomeController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchCurrentMonthlyIncome();
+    _fetchCurrentMonthlyIncome(); // استدعاء الدالة لتحميل الدخل الشهري الحالي عند بدء الشاشة
   }
 
+  // دالة لقراءة الدخل الشهري الحالي من قاعدة البيانات (Firestore)
   Future<void> _fetchCurrentMonthlyIncome() async {
-    String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return;
+    String? userId = FirebaseAuth.instance.currentUser?.uid; // الحصول على الـ userId من الـ Firebase
+    if (userId == null) return; // إذا كان المستخدم غير مسجل الدخول، نوقف العملية
 
+    // قراءة البيانات من Firestore لجلب الدخل الشهري
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -36,18 +43,20 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     }
   }
 
+  // دالة لإضافة دخل جديد
   Future<void> _addNewIncome() async {
+    // محاولة تحويل الدخل المدخل إلى قيمة عددية من نوع double
     double? newIncome = double.tryParse(_incomeController.text);
     if (newIncome != null && newIncome > 0) {
-      // تحديث الدخل الشهري الإجمالي
+      // إذا كانت القيمة المدخلة صحيحة وغير صفرية، نضيفها إلى الدخل الشهري الحالي
       setState(() {
         _monthlyIncome += newIncome;
       });
 
       String? userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) return;
+      if (userId == null) return; // إذا كان المستخدم غير مسجل الدخول، نوقف العملية
 
-      // حفظ الدخل المحدّث في قاعدة البيانات
+      // حفظ الدخل الشهري الجديد في قاعدة البيانات (Firestore)
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -57,7 +66,7 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
         'monthly_income': _monthlyIncome,
       });
 
-      // إضافة الدخل الجديد إلى مجموعة فرعية يومية في قسم الدخل
+      // إضافة الدخل اليومي إلى مجموعة فرعية داخل قاعدة البيانات مع ملاحظات المستخدم
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -70,11 +79,14 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
         'notes': _notes,
       });
 
-      // تنظيف الحقول بعد الإضافة
+      // تنظيف حقل الإدخال بعد إضافة الدخل
       _incomeController.clear();
+
+      // إظهار رسالة تأكيد للمستخدم
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Income added successfully!')));
     } else {
+      // إذا كانت القيمة المدخلة غير صحيحة أو صفرية، نعرض رسالة خطأ
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Please enter a valid amount!')));
     }
@@ -85,38 +97,42 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Add Monthly Income'),
-        automaticallyImplyLeading: false, // This removes the back button
+        automaticallyImplyLeading: false, // إزالة زر الرجوع
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // حقل نصي لإدخال قيمة الدخل الشهري
             TextField(
               controller: _incomeController,
               decoration: InputDecoration(
-                labelText: 'Income Amount',
+                labelText: 'Income Amount', // نص الحقل
                 border: OutlineInputBorder(),
-                prefixText: '\$',
+                prefixText: '\$', // إضافة الرمز \$ قبل القيمة
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.number, // تعيين نوع الإدخال لرقم
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 16), // إضافة مسافة بين الحقول
+            // حقل نصي لإدخال الملاحظات
             TextField(
               decoration: InputDecoration(
-                labelText: 'Notes',
+                labelText: 'Notes', // نص الحقل
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
-                _notes = value;
+                _notes = value; // تحديث الملاحظات عند التغيير
               },
             ),
             SizedBox(height: 20),
+            // زر لإضافة الدخل
             ElevatedButton(
-              onPressed: _addNewIncome,
+              onPressed: _addNewIncome, // عند الضغط، يتم استدعاء دالة إضافة الدخل
               child: Text('Add Income'),
             ),
             SizedBox(height: 20),
+            // عرض الدخل الشهري الإجمالي
             Text(
               'Total Monthly Income: \$$_monthlyIncome',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -127,5 +143,6 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     );
   }
 }
+
 
 

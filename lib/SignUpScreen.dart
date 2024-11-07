@@ -8,38 +8,39 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _showPassword = false;
-  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();  // للتحكم في حقل البريد الإلكتروني
+  final _passwordController = TextEditingController();  // للتحكم في حقل كلمة المرور
+  bool _showPassword = false;  // لتحديد ما إذا كانت كلمة المرور مرئية أم لا
+  final _formKey = GlobalKey<FormState>();  // مفتاح للتحقق من صحة النموذج
 
   // التحقق من صحة الإيميل
   String? _validateEmail(String value) {
     if (value.isEmpty) {
-      return 'Email is required';
+      return 'Email is required';  // التحقق من أن البريد الإلكتروني غير فارغ
     } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Enter a valid email';
+      return 'Enter a valid email';  // التحقق من أن البريد الإلكتروني صالح
     }
     return null;
   }
 
-  // التحقق من كلمة المرور
+  // التحقق من صحة كلمة المرور
   String? _validatePassword(String value) {
     if (value.isEmpty) {
-      return 'Password is required';
+      return 'Password is required';  // التحقق من أن كلمة المرور غير فارغة
     } else if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return 'Password must be at least 6 characters';  // التحقق من أن كلمة المرور تحتوي على 6 أحرف على الأقل
     }
     return null;
   }
 
+  // وظيفة التسجيل
   void _signUp() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) {  // إذا كانت المدخلات صحيحة
       try {
         // إنشاء المستخدم باستخدام Firebase Auth
         UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+          email: _emailController.text.trim(),  // إزالة الفراغات في الإيميل
+          password: _passwordController.text.trim(),  // إزالة الفراغات في كلمة المرور
         );
         
         // الحصول على معرف المستخدم
@@ -56,19 +57,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // إظهار رسالة النجاح
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم التسجيل بنجاح!'),
+            content: Text('تم التسجيل بنجاح!'),  // رسالة نجاح
             backgroundColor: Colors.green,
           ),
         );
 
         // الانتقال إلى صفحة تسجيل الدخول بعد التسجيل الناجح
-        await Future.delayed(Duration(seconds: 2));
-        Navigator.pushReplacementNamed(context, '/login');
+        await Future.delayed(Duration(seconds: 2));  // تأخير لعرض رسالة النجاح
+        Navigator.pushReplacementNamed(context, '/login');  // الانتقال لصفحة تسجيل الدخول
       } catch (e) {
         // إظهار رسالة الخطأ في حالة الفشل
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ في التسجيل: ${e.toString()}'),
+            content: Text('خطأ في التسجيل: ${e.toString()}'),  // رسالة خطأ
             backgroundColor: Colors.red,
           ),
         );
@@ -80,56 +81,61 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign Up'),
+        title: Text('Sign Up'),  // عنوان صفحة التسجيل
       ),
       body: Form(
-        key: _formKey,
+        key: _formKey,  // تعيين مفتاح النموذج
         child: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.0),  // إضافة حواف للنموذج
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,  // محاذاة العناصر في وسط الصفحة
             children: [
+              // حقل البريد الإلكتروني
               TextFormField(
-                controller: _emailController,
+                controller: _emailController,  // تعيين المتحكم للبريد الإلكتروني
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'Email',  // تسمية الحقل
                   errorBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 1),
+                    borderSide: BorderSide(color: Colors.red, width: 1),  // إطار الخطأ باللون الأحمر
                   ),
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) => _validateEmail(value ?? ''),
+                keyboardType: TextInputType.emailAddress,  // تحديد نوع الإدخال كإيميل
+                validator: (value) => _validateEmail(value ?? ''),  // التحقق من صحة البريد الإلكتروني
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 16),  // مسافة بين الحقول
+              
+              // حقل كلمة المرور
               TextFormField(
-                controller: _passwordController,
+                controller: _passwordController,  // تعيين المتحكم لكلمة المرور
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'Password',  // تسمية الحقل
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _showPassword ? Icons.visibility : Icons.visibility_off,
+                      _showPassword ? Icons.visibility : Icons.visibility_off,  // تغيير الأيقونة بين عرض و إخفاء كلمة المرور
                     ),
                     onPressed: () {
                       setState(() {
-                        _showPassword = !_showPassword;
+                        _showPassword = !_showPassword;  // تغيير حالة عرض كلمة المرور
                       });
                     },
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 1),
+                    borderSide: BorderSide(color: Colors.red, width: 1),  // إطار الخطأ باللون الأحمر
                   ),
                 ),
-                obscureText: !_showPassword,
-                validator: (value) => _validatePassword(value ?? ''),
+                obscureText: !_showPassword,  // إخفاء كلمة المرور إذا كانت _showPassword false
+                validator: (value) => _validatePassword(value ?? ''),  // التحقق من صحة كلمة المرور
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 16),  // مسافة بين الحقول
+              
+              // زر التسجيل
               ElevatedButton(
-                onPressed: _signUp,
+                onPressed: _signUp,  // عند الضغط على الزر، يتم استدعاء دالة التسجيل
                 child: Text('Sign Up'),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/login');
+                  Navigator.pushNamed(context, '/login');  // الانتقال لصفحة تسجيل الدخول إذا كان لدى المستخدم حساب
                 },
                 child: Text('Already have an account? Login'),
               ),
@@ -140,6 +146,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
+
 
 
 

@@ -8,63 +8,69 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _phoneNumberController = TextEditingController();
+  final _formKey = GlobalKey<FormState>(); // المفتاح للتحقق من صحة النموذج
+  final TextEditingController _usernameController = TextEditingController(); // للتحكم في حقل اسم المستخدم
+  final TextEditingController _phoneNumberController = TextEditingController(); // للتحكم في حقل رقم الهاتف
 
-  String _userId = '';
-  String _username = '';
-  String _email = '';
-  String _phoneNumber = '';
-  String _oldPassword = '';
-  String _newPassword = '';
-  String _confirmNewPassword = '';
+  String _userId = ''; // معرف المستخدم
+  String _username = ''; // اسم المستخدم
+  String _email = ''; // البريد الإلكتروني
+  String _phoneNumber = ''; // رقم الهاتف
+  String _oldPassword = ''; // كلمة المرور القديمة
+  String _newPassword = ''; // كلمة المرور الجديدة
+  String _confirmNewPassword = ''; // تأكيد كلمة المرور الجديدة
 
   @override
   void initState() {
     super.initState();
-    _initializeUserData();
+    _initializeUserData(); // تحميل بيانات المستخدم عند بدء الشاشة
   }
 
+  // دالة لتحميل بيانات المستخدم من Firebase
   Future<void> _initializeUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser; // الحصول على المستخدم الحالي
     if (user != null) {
-      _userId = user.uid;
-      _email = user.email ?? '';
+      _userId = user.uid; // تعيين معرف المستخدم
+      _email = user.email ?? ''; // تعيين البريد الإلكتروني للمستخدم
 
+      // استرجاع بيانات المستخدم من قاعدة البيانات
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(_userId)
           .get();
       if (userDoc.exists) {
         setState(() {
-          _username = userDoc.data()?['username'] ?? '';
-          _phoneNumber = userDoc.data()?['phone_number'] ?? '';
-          _usernameController.text = _username;
-          _phoneNumberController.text = _phoneNumber;
+          _username = userDoc.data()?['username'] ?? ''; // تعيين اسم المستخدم
+          _phoneNumber = userDoc.data()?['phone_number'] ?? ''; // تعيين رقم الهاتف
+          _usernameController.text = _username; // تعيين القيمة لحقل اسم المستخدم
+          _phoneNumberController.text = _phoneNumber; // تعيين القيمة لحقل رقم الهاتف
         });
       }
     }
   }
 
+  // دالة لتحديث بيانات المستخدم في Firebase
   Future<void> _updateUserData() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) { // التحقق من صحة النموذج
       final userRef =
-          FirebaseFirestore.instance.collection('users').doc(_userId);
+          FirebaseFirestore.instance.collection('users').doc(_userId); // مرجع المستخدم في قاعدة البيانات
 
+      // تحديث بيانات المستخدم في Firebase
       await userRef.set({
         'username': _username,
         'email': _email,
         'phone_number': _phoneNumber,
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)); // دمج البيانات مع البيانات الحالية
 
+      // عرض رسالة تأكيد بعد التحديث
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('تم حفظ التغييرات بنجاح')));
     }
   }
 
+  // دالة لتحديث كلمة المرور
   Future<void> _updatePassword() async {
-    if (_newPassword != _confirmNewPassword) {
+    if (_newPassword != _confirmNewPassword) { // التحقق من تطابق كلمة المرور الجديدة مع تأكيدها
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('كلمة المرور الجديدة غير متطابقة')));
       return;
@@ -77,9 +83,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         password: _oldPassword,
       );
 
+      // إعادة مصادقة المستخدم باستخدام كلمة المرور القديمة
       await user?.reauthenticateWithCredential(authCredential);
+      // تحديث كلمة المرور الجديدة
       await user?.updatePassword(_newPassword);
 
+      // تحديث كلمة المرور في Firebase
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_userId)
@@ -91,13 +100,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SnackBar(content: Text('فشل في تحديث كلمة المرور: $error')));
       });
 
-      Navigator.pop(context);
+      Navigator.pop(context); // العودة إلى الشاشة السابقة
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('كلمة المرور الحالية غير صحيحة')));
     }
   }
 
+  // دالة لإظهار مربع حوار لتغيير كلمة المرور
   Future<void> _showChangePasswordDialog() async {
     showDialog(
       context: context,
@@ -107,38 +117,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // حقل إدخال كلمة المرور الحالية
               TextFormField(
                 obscureText: true,
                 decoration: InputDecoration(labelText: 'كلمة المرور الحالية'),
                 onChanged: (value) {
-                  _oldPassword = value;
+                  _oldPassword = value; // تعيين القيمة لكلمة المرور الحالية
                 },
               ),
+              // حقل إدخال كلمة المرور الجديدة
               TextFormField(
                 obscureText: true,
                 decoration: InputDecoration(labelText: 'كلمة المرور الجديدة'),
                 onChanged: (value) {
-                  _newPassword = value;
+                  _newPassword = value; // تعيين القيمة لكلمة المرور الجديدة
                 },
               ),
+              // حقل تأكيد كلمة المرور الجديدة
               TextFormField(
                 obscureText: true,
                 decoration:
                     InputDecoration(labelText: 'تأكيد كلمة المرور الجديدة'),
                 onChanged: (value) {
-                  _confirmNewPassword = value;
+                  _confirmNewPassword = value; // تعيين القيمة لتأكيد كلمة المرور
                 },
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context), // إغلاق مربع الحوار
               child: Text('إلغاء'),
             ),
             TextButton(
               onPressed: () async {
-                await _updatePassword();
+                await _updatePassword(); // تنفيذ تحديث كلمة المرور
               },
               child: Text('حفظ'),
             ),
@@ -150,8 +163,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _phoneNumberController.dispose();
+    _usernameController.dispose(); // تحرير الموارد
+    _phoneNumberController.dispose(); // تحرير الموارد
     super.dispose();
   }
 
@@ -161,12 +174,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: Text('الإعدادات'),
         automaticallyImplyLeading:
-            false, // Disable the back arrow or drawer icon
+            false, // تعطيل السهم الخلفي أو أيقونة القائمة الجانبية
         actions: [
           IconButton(
-            icon: Icon(Icons.exit_to_app), // Icon for logout
+            icon: Icon(Icons.exit_to_app), // أيقونة لتسجيل الخروج
             onPressed: () {
-              _logout(context); // Call the logout function
+              _logout(context); // استدعاء دالة تسجيل الخروج
             },
           ),
         ],
@@ -174,45 +187,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey,
+          key: _formKey, // التحقق من صحة النموذج
           child: Column(
             children: [
+              // حقل إدخال اسم المستخدم
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(labelText: 'اسم المستخدم'),
                 onChanged: (value) {
-                  _username = value;
+                  _username = value; // تعيين القيمة لاسم المستخدم
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'الرجاء إدخال اسم المستخدم';
+                    return 'الرجاء إدخال اسم المستخدم'; // التحقق من وجود قيمة
                   }
                   return null;
                 },
               ),
+              // حقل إدخال البريد الإلكتروني (قراءة فقط)
               TextFormField(
                 initialValue: _email,
                 decoration: InputDecoration(labelText: 'البريد الإلكتروني'),
-                readOnly: true,
+                readOnly: true, // جعل الحقل للقراءة فقط
               ),
+              // حقل إدخال رقم الهاتف
               TextFormField(
                 controller: _phoneNumberController,
                 decoration: InputDecoration(labelText: 'رقم الهاتف'),
                 onChanged: (value) {
-                  _phoneNumber = value;
+                  _phoneNumber = value; // تعيين القيمة لرقم الهاتف
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'الرجاء إدخال رقم الهاتف';
+                    return 'الرجاء إدخال رقم الهاتف'; // التحقق من وجود قيمة
                   }
                   return null;
                 },
               ),
               SizedBox(height: 20),
+              // زر حفظ التغييرات
               ElevatedButton(
                 onPressed: _updateUserData,
                 child: Text('حفظ التغييرات'),
               ),
+              // زر تعيين كلمة مرور جديدة
               ElevatedButton(
                 onPressed: _showChangePasswordDialog,
                 child: Text('تعيين إعادة كلمة سر جديدة'),
@@ -223,9 +241,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+
+  // دالة لتسجيل الخروج
   void _logout(BuildContext context) {
     // يمكنك هنا إضافة كود لتسجيل الخروج، مثل مسح البيانات أو التوجيه لشاشة تسجيل الدخول.
     // مثال:
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushReplacementNamed(context, '/login'); // التوجيه إلى شاشة تسجيل الدخول
   }
 }
+
