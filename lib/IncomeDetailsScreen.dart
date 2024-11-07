@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class IncomeDetailsScreen extends StatefulWidget {
   @override
@@ -12,17 +13,24 @@ class _IncomeDetailsScreenState extends State<IncomeDetailsScreen> {
   TextEditingController _amountController = TextEditingController();
   TextEditingController _notesController = TextEditingController();
   DateTime? _selectedDate;
+  String? userId;
 
   @override
   void initState() {
     super.initState();
+    // الحصول على userId للمستخدم الحالي
+    userId = FirebaseAuth.instance.currentUser?.uid;
     _fetchIncomeData();
   }
 
-  // Fetch all income data from Firestore
+  // Fetch all income data from Firestore based on userId
   Future<void> _fetchIncomeData({String? amount, String? notes, DateTime? date}) async {
+    if (userId == null) return;
+
     Query query = FirebaseFirestore.instance
-        .collection('finance')
+        .collection('users')
+        .doc(userId)
+        .collection('incomes')
         .doc('monthly_income')
         .collection('daily_income');
 
@@ -82,13 +90,13 @@ class _IncomeDetailsScreenState extends State<IncomeDetailsScreen> {
     }
   }
 
-  @override
+
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Income Details'),
-                automaticallyImplyLeading: false, // This removes the back button
-
+        automaticallyImplyLeading: false, // This removes the back button
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

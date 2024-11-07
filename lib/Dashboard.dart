@@ -7,7 +7,7 @@ import 'package:flutter_application_money_cash_flow/IncomeDetailsScreen.dart';
 import 'package:flutter_application_money_cash_flow/Monthly%20Income%20Screen.dart';
 import 'package:flutter_application_money_cash_flow/ReportScreen.dart';
 import 'package:flutter_application_money_cash_flow/SettingsScreen.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 class DashboardScreen extends StatefulWidget {
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -15,6 +15,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
+  double _monthlyIncome = 0.0;
+  double _totalExpenses = 0.0;
 
   final List<Widget> _pages = [
     DashboardContent(),
@@ -37,14 +39,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    // جلب الدخل الشهري
+    final incomeDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('incomes')
+        .doc('monthly_income')
+        .get();
+
+    if (incomeDoc.exists) {
+      setState(() {
+        _monthlyIncome = incomeDoc.data()?['monthly_income']?.toDouble() ?? 0.0;
+      });
+    }
+
+    // حساب إجمالي المصروفات
+    final expensesSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('expenses')
+        .get();
+
+    double totalExpenses = 0.0;
+    for (var doc in expensesSnapshot.docs) {
+      totalExpenses += doc.data()['amount']?.toDouble() ?? 0.0;
+    }
+
+    setState(() {
+      _totalExpenses = totalExpenses;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _currentIndex == 0
           ? AppBar(
               title: Text('Dashboard'),
-              automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
+              automaticallyImplyLeading: false,
             )
-          : null, // لا تظهر العنوان في الصفحات الأخرى
+          : null,
       body: _pages[_currentIndex],
       bottomNavigationBar: Container(
         color: Color(0xFF004D40),
@@ -91,13 +134,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+
 class DashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return Container();
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
           .collection('expenses')
-          .orderBy('date', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -118,7 +166,7 @@ class DashboardContent extends StatelessWidget {
           String category = doc['category'];
           double amount = doc['amount'];
           DateTime date = (doc['date'] as Timestamp).toDate();
-          
+
           categoryTotals[category] = (categoryTotals[category] ?? 0) + amount;
 
           // حساب المصروفات اليومية
@@ -140,7 +188,7 @@ class DashboardContent extends StatelessWidget {
         double totalExpense = categoryTotals.values.fold(0, (sum, item) => sum + item);
 
         return StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('finance').doc('monthly_income').snapshots(),
+          stream: FirebaseFirestore.instance.collection('users').doc(userId).collection('incomes').doc('monthly_income').snapshots(),
           builder: (context, incomeSnapshot) {
             if (incomeSnapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
@@ -163,7 +211,7 @@ class DashboardContent extends StatelessWidget {
                     SizedBox(height: 20),
                     _buildExpenseSummary(dailyExpense, weeklyExpense, monthlyExpense),
                     SizedBox(height: 20),
-                    _buildExpenseChart(categoryTotals, totalExpense), // إضافة فلو شارت
+                    _buildExpenseChart(categoryTotals, totalExpense),
                     SizedBox(height: 20),
                     _buildExpenseList(snapshot),
                     SizedBox(height: 20),
@@ -176,6 +224,7 @@ class DashboardContent extends StatelessWidget {
       },
     );
   }
+
 
   Widget _buildIncomeOverview(double totalExpense, double monthlyIncome) {
     return Card(
@@ -280,6 +329,7 @@ Color _getColorForCategory(String category) {
             Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             Text('\$${amount.toStringAsFixed(2)}', style: TextStyle(fontSize: 18)),
+            
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // تأكد من استيراد FirebaseAuth
 
 class MonthlyIncomeScreen extends StatefulWidget {
   @override
@@ -9,7 +10,6 @@ class MonthlyIncomeScreen extends StatefulWidget {
 class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
   double _monthlyIncome = 0.0;
   String _notes = "";
-
   final _incomeController = TextEditingController();
 
   @override
@@ -19,10 +19,16 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
   }
 
   Future<void> _fetchCurrentMonthlyIncome() async {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
     final doc = await FirebaseFirestore.instance
-        .collection('finance')
+        .collection('users')
+        .doc(userId)
+        .collection('incomes')
         .doc('monthly_income')
         .get();
+
     if (doc.exists) {
       setState(() {
         _monthlyIncome = doc.data()?['monthly_income']?.toDouble() ?? 0.0;
@@ -33,22 +39,29 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
   Future<void> _addNewIncome() async {
     double? newIncome = double.tryParse(_incomeController.text);
     if (newIncome != null && newIncome > 0) {
-      // Update total monthly income
+      // تحديث الدخل الشهري الإجمالي
       setState(() {
         _monthlyIncome += newIncome;
       });
 
-      // Save the updated income in the database
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
+
+      // حفظ الدخل المحدّث في قاعدة البيانات
       await FirebaseFirestore.instance
-          .collection('finance')
+          .collection('users')
+          .doc(userId)
+          .collection('incomes')
           .doc('monthly_income')
-          .update({
+          .set({
         'monthly_income': _monthlyIncome,
       });
 
-      // Add the new income entry to daily income collection
+      // إضافة الدخل الجديد إلى مجموعة فرعية يومية في قسم الدخل
       await FirebaseFirestore.instance
-          .collection('finance')
+          .collection('users')
+          .doc(userId)
+          .collection('incomes')
           .doc('monthly_income')
           .collection('daily_income')
           .add({
@@ -57,7 +70,7 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
         'notes': _notes,
       });
 
-      // Clear the input field and show success message
+      // تنظيف الحقول بعد الإضافة
       _incomeController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Income added successfully!')));
@@ -72,8 +85,7 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Add Monthly Income'),
-                automaticallyImplyLeading: false, // This removes the back button
-
+        automaticallyImplyLeading: false, // This removes the back button
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -115,4 +127,5 @@ class _MonthlyIncomeScreenState extends State<MonthlyIncomeScreen> {
     );
   }
 }
+
 

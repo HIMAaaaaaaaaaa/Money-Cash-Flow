@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -35,19 +36,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _signUp() async {
     if (_formKey.currentState!.validate()) {
       try {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        // إنشاء المستخدم باستخدام Firebase Auth
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+        
+        // الحصول على معرف المستخدم
+        String userId = userCredential.user!.uid;
+
+        // إضافة بيانات المستخدم إلى Firestore
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'userId': userId,
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text.trim(),
+          // أضف أي بيانات أخرى تريد تخزينها للمستخدم هنا مثل الاسم أو رقم الهاتف
+        });
+
+        // إظهار رسالة النجاح
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('تم التسجيل بنجاح!'),
             backgroundColor: Colors.green,
           ),
         );
+
+        // الانتقال إلى صفحة تسجيل الدخول بعد التسجيل الناجح
         await Future.delayed(Duration(seconds: 2));
         Navigator.pushReplacementNamed(context, '/login');
       } catch (e) {
+        // إظهار رسالة الخطأ في حالة الفشل
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('خطأ في التسجيل: ${e.toString()}'),
@@ -122,6 +140,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
+
 
 
 

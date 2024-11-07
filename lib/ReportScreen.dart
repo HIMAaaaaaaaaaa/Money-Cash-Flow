@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ReportScreen extends StatefulWidget {
   @override
@@ -13,16 +14,33 @@ class _ReportScreenState extends State<ReportScreen> {
   double? monthlyIncome;
   double? dailyAllowance;
   List<String> tips = [];
+  String? userId;
 
   @override
   void initState() {
     super.initState();
+    userId = FirebaseAuth.instance.currentUser?.uid;
     _fetchReportData();
   }
 
+
   Future<void> _fetchReportData() async {
-    final expensesSnapshot = await FirebaseFirestore.instance.collection('expenses').get();
-    final incomeSnapshot = await FirebaseFirestore.instance.collection('finance').doc('monthly_income').get();
+    if (userId == null) return;
+
+    // استرجاع المصاريف بناءً على userId
+    final expensesSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('expenses')
+        .get();
+
+    // استرجاع الدخل الشهري بناءً على userId
+    final incomeSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('incomes')
+        .doc('monthly_income')
+        .get();
 
     setState(() {
       // حساب إجمالي المصاريف
@@ -69,13 +87,12 @@ class _ReportScreenState extends State<ReportScreen> {
 
     return tipsList;
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('التقرير المالي'),
-          automaticallyImplyLeading: false, // Disable the back arrow or drawer icon
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

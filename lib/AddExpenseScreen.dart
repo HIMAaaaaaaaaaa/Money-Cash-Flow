@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // لا تنسَ استيراد FirebaseAuth
 
 class AddExpenseScreen extends StatefulWidget {
   @override
@@ -65,8 +66,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       double amount = double.tryParse(_amountController.text) ?? 0.0;
       String note = _noteController.text;
 
-      // إضافة المصروفات إلى Firestore
-      await FirebaseFirestore.instance.collection('expenses').add({
+      // جلب معرف المستخدم الحالي
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not logged in.')),
+        );
+        return;
+      }
+
+      // إضافة المصروفات إلى المجموعة الفرعية للمصروفات الخاصة بالمستخدم
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('expenses')
+          .add({
         'amount': amount,
         'category': _selectedCategory,
         'note': note,
@@ -92,5 +106,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 }
+
 
 

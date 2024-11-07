@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ExpenseDetailsScreen extends StatefulWidget {
   @override
@@ -11,13 +12,21 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
   String _searchQuery = '';
   double? _searchAmount;
   DateTime? _selectedDate;
+  String? userId;
+
+  @override
+  void initState() {
+    super.initState();
+    // الحصول على userId للمستخدم الحالي
+    userId = FirebaseAuth.instance.currentUser?.uid;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Expense Details'),
-        automaticallyImplyLeading: false, // This removes the back button
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
@@ -97,8 +106,15 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
     );
   }
 
-  Widget _buildExpenseList() {
-    Query query = FirebaseFirestore.instance.collection('expenses');
+    Widget _buildExpenseList() {
+    if (userId == null) {
+      return Center(child: Text('No user ID found.'));
+    }
+
+    Query query = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('expenses');
 
     return StreamBuilder<QuerySnapshot>(
       stream: query.orderBy('date', descending: true).snapshots(),
@@ -111,7 +127,6 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
           return Center(child: Text('No expenses recorded.'));
         }
 
-        // Filter results based on search query
         final filteredDocs = snapshot.data!.docs.where((doc) {
           final note = doc['note'] ?? '';
           final amount = doc['amount'] ?? 0.0;
@@ -154,8 +169,15 @@ class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
   }
 
   void _deleteExpense(String id) async {
-    await FirebaseFirestore.instance.collection('expenses').doc(id).delete();
-    print('Expense deleted: $id');
+    if (userId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('expenses')
+          .doc(id)
+          .delete();
+      print('Expense deleted: $id');
+    }
   }
 }
 
