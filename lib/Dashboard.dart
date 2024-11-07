@@ -15,7 +15,9 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
+  // ignore: unused_field
   double _monthlyIncome = 0.0;
+  // ignore: unused_field
   double _totalExpenses = 0.0;
 
   final List<Widget> _pages = [
@@ -133,8 +135,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 }
-
-
 class DashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -225,7 +225,6 @@ class DashboardContent extends StatelessWidget {
     );
   }
 
-
   Widget _buildIncomeOverview(double totalExpense, double monthlyIncome) {
     return Card(
       elevation: 4,
@@ -243,7 +242,6 @@ class DashboardContent extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildExpenseSummary(double dailyExpense, double weeklyExpense, double monthlyExpense) {
     return Card(
