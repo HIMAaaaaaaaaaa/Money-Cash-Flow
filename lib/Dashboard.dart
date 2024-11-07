@@ -152,7 +152,7 @@ class DashboardContent extends StatelessWidget {
                     SizedBox(height: 20),
                     _buildExpenseList(snapshot),
                     SizedBox(height: 20),
-                    _buildTipsAndAlerts(),
+                    
                   ],
                 ),
               ),
@@ -256,9 +256,6 @@ Color _getColorForCategory(String category) {
   }
 }
 
-
-
-
   Widget _buildSummaryCard(String title, double value) {
     return Column(
       children: [
@@ -286,25 +283,6 @@ Color _getColorForCategory(String category) {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildTipsAndAlerts() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Tips & Alerts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            Text('Tip: Review your weekly spending to identify potential savings.'),
-            SizedBox(height: 5),
-            Text('Alert: You have reached 80% of your monthly budget.'),
-          ],
-        ),
       ),
     );
   }
